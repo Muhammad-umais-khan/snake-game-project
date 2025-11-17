@@ -171,7 +171,17 @@ Draws food
 Draws player
 
 Runs every frame.
+Why EndDrawing() is necessary
 
+In Raylib, drawing works like a double-buffer system:
+
+BeginDrawing() → tells Raylib: “I’m about to start drawing this frame.”
+
+You draw all objects (background, player, food, text, etc.)
+
+EndDrawing() → tells Raylib: “Done drawing this frame, show it on screen now.”
+
+Without EndDrawing(), nothing appears because the drawn frame isn’t sent to the screen yet. It essentially flushes the drawing commands
 10. Cleanup
 CloseWindow();
 return 0;
