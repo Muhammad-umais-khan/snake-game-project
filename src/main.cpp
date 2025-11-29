@@ -1,30 +1,32 @@
 #include <raylib.h>
 #include <stdlib.h>
-#include <time.h>
 #include <math.h>
 
 int main() {
-    const int screenWidth = 800;
-    const int screenHeight = 900;
-    int BallX = screenWidth / 2;
-    int BallY = screenHeight / 2;
-    char key = 'Z';
+    const int screenWidth = 840;
+    const int screenHeight = 960;
+    const int cellSize = 40;
+    const int gridWidth = screenWidth / cellSize;
+    const int gridHeight = screenHeight / cellSize;
+
+    int snakeLength = 4;
+    int snakeX = screenWidth/20;
+    int snakeY = screenHeight / 20;
+    int snakePosition[255][2] = {{snakeX, snakeY}};
+    
+    char key = 'R';
     Color black = {0, 0, 0, 255};
     Color white = {255, 255, 255, 255};
     Color red = {255, 73, 92, 255};
-    int playerRadius = 20;
-    int foodX;
-    int foodY;
-    int foodRadius = 10;
-
+    int foodX=0;
+    int foodY=0;
     InitWindow(screenWidth, screenHeight, "first game window by umais using raylib");
-    SetTargetFPS(59);
-    srand(time(NULL));
+    SetTargetFPS(10);
 
     do {
-        foodX = rand() % screenWidth;
-        foodY = rand() % screenHeight;
-    } while (foodX == BallX && foodY == BallY);
+        foodX = GetRandomValue(0, gridWidth - 1);
+        foodY = GetRandomValue(0, gridHeight - 1);
+    } while (foodX == snakeX && foodY == snakeY);
 
     while (!WindowShouldClose()) {
         if (IsKeyDown(KEY_RIGHT)) key = 'R';
@@ -32,34 +34,52 @@ int main() {
         if (IsKeyDown(KEY_UP)) key = 'U';
         if (IsKeyDown(KEY_DOWN)) key = 'D';
 
-        if (key == 'R') BallX += 5;
-        if (key == 'L') BallX -= 5;
-        if (key == 'U') BallY -= 5;
-        if (key == 'D') BallY += 5;
+        for(int i=snakeLength; i>0; i--) { //move body segments 
+                snakePosition[i][0] = snakePosition[i-1][0];
+                snakePosition[i][1] = snakePosition[i-1][1];
+            }
 
-        if (BallX > screenWidth) BallX = 0;
-        if (BallX < 0) BallX = screenWidth;
-        if (BallY > screenHeight) BallY = 0;
-        if (BallY < 0) BallY = screenHeight;
+        if (key == 'R') snakePosition[0][0] +=1; //move head right
 
-        float dx = BallX - foodX;
-        float dy = BallY - foodY;
-        float distance = sqrt(dx*dx + dy*dy);
+        if (key == 'L') snakePosition[0][0] -= 1; //move head left
+        
+        if (key == 'U') snakePosition[0][1] -= 1; //move head up
+        
+        if (key == 'D') snakePosition[0][1] += 1; //move head Down
+        
 
-        if (distance <= playerRadius + foodRadius) {
+        if (snakePosition[0][0] > gridWidth) snakePosition[0][0] = 0;
+        if (snakePosition[0][0] < 0) snakePosition[0][0] = gridWidth;
+        if (snakePosition[0][1] > gridHeight) snakePosition[0][1] = 0;
+        if (snakePosition[0][1] < 0) snakePosition[0][1] = gridHeight;
+
+        // float dx = snakeX - foodX;
+        // float dy = snakeY - foodY;
+        // float distance = sqrt(dx*dx + dy*dy);
+
+        if (snakePosition[0][0] == foodX && snakePosition[0][1] == foodY ) { 
+            //distance <= playerRadius + cellSize/2
             do {
-                foodX = rand() % screenWidth;
-                foodY = rand() % screenHeight;
-            } while (foodX == BallX && foodY == BallY);
+                foodX = GetRandomValue(0, gridWidth - 1);
+                foodY = GetRandomValue(0, gridHeight - 1);
+                snakeLength++;
+            } while (snakePosition[0][0] == foodX && snakePosition[0][1] == foodY);
         }
 
         BeginDrawing();
         ClearBackground(black);
-        DrawCircle(foodX, foodY, foodRadius, red);
-        DrawCircle(BallX, BallY, playerRadius, white);
+        for(int i=0; i<gridWidth; i++) {
+            for(int j=0; j<gridHeight; j++) {
+                DrawRectangleLines(i*cellSize, j*cellSize, cellSize, cellSize, GRAY);
+            }
+        }
+        DrawRectangle(foodX*cellSize, foodY*cellSize, cellSize,cellSize ,red);
+        for(int i=0; i<snakeLength; i++) {
+            DrawRectangle((snakePosition[i][0])*cellSize,(snakePosition[i][1])*cellSize, cellSize,cellSize, white);
+        }
         EndDrawing();
+    
     }
-
     CloseWindow();
     return 0;
 }
