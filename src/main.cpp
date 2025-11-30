@@ -1,47 +1,65 @@
 #include <raylib.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string> // Needed for std::to_string for the score
 
 int main()
 {
-    bool gameOver = false;
-
-    const int screenWidth = 1000;
-    const int screenHeight = 960;
+    // --- Initialization & Configuration ---
+    const int screenWidth = 1200;
+    const int screenHeight = 600;
     const int cellSize = 40;
     const int gridWidth = screenWidth / cellSize;
     const int gridHeight = screenHeight / cellSize;
 
-    int snakeLength = 4;
-    int snakeX = screenWidth / 20;
-    int snakeY = screenHeight / 20;
-    int snakePosition[255][2] = {{snakeX, snakeY}};
+    // Game State variables
+    bool gameOver = false;
+    int score = 0;
 
+    // Snake Initialization
+    int snakeLength = 4;
+    int snakeX = screenWidth / 20; // roughly center
+    int snakeY = screenHeight / 20;
+    int snakePosition[255][2] = {0}; // Initialize array to 0
+
+    // Initialize entire snake body at start position to prevent "stretching" glitch
+    for (int i = 0; i < snakeLength; i++)
+    {
+        snakePosition[i][0] = snakeX;
+        snakePosition[i][1] = snakeY;
+    }
+
+    // Input state
     char key = 'R';
-    Color black = {0, 0, 0, 255};
-    Color white = {255, 255, 255, 255};
-    Color red = {255, 73, 92, 255};
+
+    // --- Color Palette (From the "Green" version) ---
+    Color backgroundColor = {150, 180, 110, 255};
+    Color gridColor = {100, 130, 90, 255};
+    Color foodColor = {220, 0, 0, 255};
+    Color snakebodyColor = {50, 70, 40, 255};
+    Color textColor = WHITE; // For score
+
+    // Food Initialization
     int foodX = 0;
     int foodY = 0;
-    InitWindow(screenWidth, screenHeight, "first game window by umais using raylib");
-    SetTargetFPS(10);
 
+    InitWindow(screenWidth, screenHeight, "Snake Game - Combined Version");
+    SetTargetFPS(10); // Snake speed
+
+    // Initial random food placement
     do
     {
         foodX = GetRandomValue(0, gridWidth - 1);
         foodY = GetRandomValue(0, gridHeight - 1);
     } while (foodX == snakeX && foodY == snakeY);
-    // Add this before the main loop
-    for (int i = 0; i < snakeLength; i++)
-    {
-        snakePosition[i][0] = snakeX;
-        snakePosition[i][1] = snakeY; // or snakeY + i to start vertically
-    }
+
+    // --- Main Game Loop ---
     while (!WindowShouldClose())
     {
+        // Only update movement if the game is not over
         if (!gameOver)
         {
-
+            // Input Handling (Added checks to prevent 180-degree turns into self)
             if (IsKeyDown(KEY_RIGHT) && key != 'L')
                 key = 'R';
             if (IsKeyDown(KEY_LEFT) && key != 'R')
@@ -51,84 +69,99 @@ int main()
             if (IsKeyDown(KEY_DOWN) && key != 'U')
                 key = 'D';
 
-            for (int i = snakeLength - 1; i > 0; i--)
-            { // move body segments
+            // 1. Move Body Segments (Shift from tail to head)
+            for (int i = snakeLength; i > 0; i--)
+            {
                 snakePosition[i][0] = snakePosition[i - 1][0];
                 snakePosition[i][1] = snakePosition[i - 1][1];
             }
-            // Change this: for (int i = snakeLength; i > 0; i--)
 
+            // 2. Move Head based on current direction
             if (key == 'R')
-                snakePosition[0][0] += 1; // move head right
-
+                snakePosition[0][0] += 1;
             if (key == 'L')
-                snakePosition[0][0] -= 1; // move head left
-
+                snakePosition[0][0] -= 1;
             if (key == 'U')
-                snakePosition[0][1] -= 1; // move head up
-
+                snakePosition[0][1] -= 1;
             if (key == 'D')
-                snakePosition[0][1] += 1; // move head Down
+                snakePosition[0][1] += 1;
 
+            // 3. Boundary Logic (Screen Wrapping)
+            // If snake goes off right, spawn on left (and vice versa)
             if (snakePosition[0][0] >= gridWidth)
                 snakePosition[0][0] = 0;
             if (snakePosition[0][0] < 0)
-                snakePosition[0][0] = gridWidth - 1; // Wrap to last valid index
+                snakePosition[0][0] = gridWidth - 1;
 
+            // If snake goes off bottom, spawn on top (and vice versa)
             if (snakePosition[0][1] >= gridHeight)
                 snakePosition[0][1] = 0;
             if (snakePosition[0][1] < 0)
                 snakePosition[0][1] = gridHeight - 1;
 
-            // float dx = snakeX - foodX;
-            // float dy = snakeY - foodY;
-            // float distance = sqrt(dx*dx + dy*dy);
-
+            // 4. Food Collision Logic
             if (snakePosition[0][0] == foodX && snakePosition[0][1] == foodY)
             {
+                // Increase length and score
                 snakeLength++;
+                score += 10;
 
-                // distance <= playerRadius + cellSize/2
+                // Respawn food ensuring it doesn't spawn on the head
                 do
                 {
                     foodX = GetRandomValue(0, gridWidth - 1);
                     foodY = GetRandomValue(0, gridHeight - 1);
                 } while (snakePosition[0][0] == foodX && snakePosition[0][1] == foodY);
             }
+
+            // 5. Self Collision Logic
+            // Check if head coordinates match any body segment coordinates
             for (int i = 1; i < snakeLength; i++)
             {
-                if (snakePosition[0][0] == snakePosition[i][0] && snakePosition[0][1] == snakePosition[i][1] && i > 0)
+                if (snakePosition[0][0] == snakePosition[i][0] &&
+                    snakePosition[0][1] == snakePosition[i][1])
                 {
                     gameOver = true;
                 }
             }
         }
 
+        // --- Drawing Phase ---
         BeginDrawing();
-        ClearBackground(black);
+        ClearBackground(backgroundColor); // Green background
 
+        // Draw Grid
         for (int i = 0; i < gridWidth; i++)
         {
             for (int j = 0; j < gridHeight; j++)
             {
-                DrawRectangleLines(i * cellSize, j * cellSize, cellSize, cellSize, GRAY);
+                DrawRectangleLines(i * cellSize, j * cellSize, cellSize, cellSize, gridColor);
             }
         }
-        DrawRectangle(foodX * cellSize, foodY * cellSize, cellSize, cellSize, red);
 
+        // Draw Food
+        DrawRectangle(foodX * cellSize, foodY * cellSize, cellSize, cellSize, foodColor);
+
+        // Draw Snake
         for (int i = 0; i < snakeLength; i++)
         {
-
-            DrawRectangle((snakePosition[i][0]) * cellSize, (snakePosition[i][1]) * cellSize, cellSize, cellSize, white);
+            DrawRectangle((snakePosition[i][0]) * cellSize, (snakePosition[i][1]) * cellSize, cellSize, cellSize, snakebodyColor);
         }
+
+        // Draw Score
+        std::string scoretext = "Score: " + std::to_string(score);
+        DrawText(scoretext.c_str(), screenWidth - 180, 8, 30, DARKGRAY);
+
+        // Draw Game Over Screen
         if (gameOver)
         {
-            DrawText("Game Over!", screenWidth / 2 - 50, screenHeight / 2 - 50, 50, RED);
+            DrawText("GAME OVER!", screenWidth / 2 - 150, screenHeight / 2 - 50, 60, RED);
+            DrawText("Press ESC to exit", screenWidth / 2 - 100, screenHeight / 2 + 20, 20, DARKGRAY);
         }
+
         EndDrawing();
     }
 
     CloseWindow();
-
     return 0;
 }
