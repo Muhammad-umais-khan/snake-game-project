@@ -11,7 +11,7 @@ int main()
     const int gridHeight = screenHeight / cellSize; // find the number of grid call verically
     int score = 0;
 
-    int snakeLength = 4;
+    int snakeLength = 3;
     int snakeX = screenWidth / 20;
     int snakeY = screenHeight / 20;
     int snakePosition[255][2] = {{snakeX, snakeY}};
@@ -91,12 +91,14 @@ int main()
         {
             for (int j = 0; j < gridHeight; j++)
             {
-                DrawRectangleLines(i * cellSize, j * cellSize, cellSize, cellSize, GRAY);
+                DrawRectangleLinesEx(
+                    (Rectangle){i * cellSize, j * cellSize, cellSize, cellSize}, 2,
+                    GRAY);
             }
         }
         DrawText(scoretext.c_str(), screenWidth - 120, 20, 20, WHITE);
         DrawRectangle(foodX * cellSize, foodY * cellSize, cellSize, cellSize, red);
-        for (int i = 0; i < snakeLength; i++)
+        for (int i = 0; i <= snakeLength; i++)
         {
             DrawRectangle((snakePosition[i][0]) * cellSize, (snakePosition[i][1]) * cellSize, cellSize, cellSize, white);
         }
