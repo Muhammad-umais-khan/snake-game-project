@@ -3,8 +3,8 @@
 #include <math.h>
 
 int main() {
-    const int screenWidth = 840;
-    const int screenHeight = 960;
+    const int screenWidth = 1200;
+    const int screenHeight = 600;
     const int cellSize = 40;
     const int gridWidth = screenWidth / cellSize;
     const int gridHeight = screenHeight / cellSize;
@@ -15,9 +15,10 @@ int main() {
     int snakePosition[255][2] = {{snakeX, snakeY}};
     
     char key = 'R';
-    Color black = {0, 0, 0, 255};
-    Color white = {255, 255, 255, 255};
-    Color red = {255, 73, 92, 255};
+    Color backgroundColor = {150, 180, 110, 255};
+    Color gridColor = {100, 130, 90, 255};
+    Color foodColor = {220, 0, 0, 255};
+    Color snakebodyColor = {50, 70, 40, 255};
     int foodX=0;
     int foodY=0;
     InitWindow(screenWidth, screenHeight, "first game window by umais using raylib");
@@ -67,15 +68,15 @@ int main() {
         }
 
         BeginDrawing();
-        ClearBackground(black);
+        ClearBackground( backgroundColor );
         for(int i=0; i<gridWidth; i++) {
             for(int j=0; j<gridHeight; j++) {
-                DrawRectangleLines(i*cellSize, j*cellSize, cellSize, cellSize, GRAY);
+                DrawRectangleLines(i*cellSize, j*cellSize, cellSize, cellSize,  gridColor);
             }
         }
-        DrawRectangle(foodX*cellSize, foodY*cellSize, cellSize,cellSize ,red);
+        DrawRectangle(foodX*cellSize, foodY*cellSize, cellSize,cellSize ,foodColor);
         for(int i=0; i<snakeLength; i++) {
-            DrawRectangle((snakePosition[i][0])*cellSize,(snakePosition[i][1])*cellSize, cellSize,cellSize, white);
+            DrawRectangle((snakePosition[i][0])*cellSize,(snakePosition[i][1])*cellSize, cellSize,cellSize, snakebodyColor );
         }
         EndDrawing();
     
