@@ -1,162 +1,101 @@
 #include <raylib.h>
 #include <stdlib.h>
-// #include <math.h> commented this out as it's not used
-#include <string>
-
-void DrawingFood(int foodX, int foodY, int cellSize, int boardOffsetX, int boardOffsetY, Color foodColor)
-{
-    // Draw Food (Offset added)
-    DrawRectangle(
-        boardOffsetX + (foodX * cellSize),
-        boardOffsetY + (foodY * cellSize),
-        cellSize, cellSize, foodColor);
-}
+#include <string> // For std::to_string
 
 int main()
 {
-    // this makes the game window use the current screen resolution
-    InitWindow(0, 0, "Snake Game - Square View");
+    // --- Configuration ---
+    const int screenWidth = 1200;
+    const int screenHeight = 600;
+    const int cellSize = 40;
+    const int gridWidth = screenWidth / cellSize;
+    const int gridHeight = screenHeight / cellSize;
 
-    ToggleFullscreen(); // fullscreen mode for better immersion ig
-    SetTargetFPS(10);
-
-    // getting the screen dimensions
-    const int windowWidth = GetScreenWidth();
-    const int windowHeight = GetScreenHeight();
-
-    const int cellSize = 60;
-
-    // checking which is smaller
-    int minDimension = (windowWidth < windowHeight) ? windowWidth : windowHeight;
-
-    // screen ke size ko pehla 120 se minus karaya for some padding
-    int rawBoardSize = minDimension - 120;
-
-    // phir check kia ke whether it's divisible by cellSize or not.
-    // if not then we minus the remainder to make it divisible
-    const int boardSize = rawBoardSize - (rawBoardSize % cellSize);
-
-    const int gridCount = boardSize / cellSize;
-
-    const int boardOffsetX = (windowWidth - boardSize) / 2;
-    const int boardOffsetY = (windowHeight - boardSize) / 2;
-
+    // Game state
     bool gameOver = false;
     int score = 0;
 
+    // --- Snake Initialization ---
     int snakeLength = 4;
-
-    // snake will spawn in middle of the GRID
-    int snakeX = gridCount / 2;
-    int snakeY = gridCount / 2;
+    int snakeX = gridWidth / 2;  // center in grid
+    int snakeY = gridHeight / 2;
     int snakePosition[255][2] = {0};
 
-    // entire snake body
     for (int i = 0; i < snakeLength; i++)
     {
-        snakePosition[i][0] = snakeX;
+        snakePosition[i][0] = snakeX - i;  // horizontal snake to the left
         snakePosition[i][1] = snakeY;
     }
 
-    char key = 'R';
+    char key = 'R'; // initial direction
 
-    // Color Palette
-    Color windowBgColor = {30, 30, 30, 255}; // Dark grey
-    Color boardBgColor = {150, 180, 110, 255};
+    // --- Colors ---
+    Color backgroundColor = {150, 180, 110, 255};
     Color gridColor = {100, 130, 90, 255};
     Color foodColor = {220, 0, 0, 255};
-    Color snakebodyColor = {50, 70, 40, 255};
+    Color snakeBodyColor = {50, 70, 40, 255};
     Color textColor = WHITE;
 
-    // Food Initialization
+    // --- Food Initialization ---
     int foodX = 0;
     int foodY = 0;
-    bool isOnSnake;
 
-    // Initial random food placement
+    InitWindow(screenWidth, screenHeight, "Snake Game - Boundary Collision");
+    SetTargetFPS(10);
+
+    // Spawn initial food
     do
     {
-        isOnSnake = false;
-        foodX = GetRandomValue(0, gridCount - 1);
-        foodY = GetRandomValue(0, gridCount - 1);
-        for (int i = 0; i < snakeLength; i++)
-        {
-            if (snakePosition[i][0] == foodX && snakePosition[i][1] == foodY)
-            {
-                isOnSnake = true;
-                break;
-            }
-        }
-    } while (isOnSnake == true);
+        foodX = GetRandomValue(0, gridWidth - 1);
+        foodY = GetRandomValue(0, gridHeight - 1);
+    } while (foodX == snakeX && foodY == snakeY);
 
-    // Main Game Loop
+    // --- Main Game Loop ---
     while (!WindowShouldClose())
     {
         if (!gameOver)
         {
-            // Input Handling
-            if (IsKeyDown(KEY_RIGHT) && key != 'L')
-                key = 'R';
-            if (IsKeyDown(KEY_LEFT) && key != 'R')
-                key = 'L';
-            if (IsKeyDown(KEY_UP) && key != 'D')
-                key = 'U';
-            if (IsKeyDown(KEY_DOWN) && key != 'U')
-                key = 'D';
+            // --- Input ---
+            if (IsKeyDown(KEY_RIGHT) && key != 'L') key = 'R';
+            if (IsKeyDown(KEY_LEFT) && key != 'R') key = 'L';
+            if (IsKeyDown(KEY_UP) && key != 'D') key = 'U';
+            if (IsKeyDown(KEY_DOWN) && key != 'U') key = 'D';
 
-            // 1. Move Body Segments
+            // --- Move snake body ---
             for (int i = snakeLength; i > 0; i--)
             {
                 snakePosition[i][0] = snakePosition[i - 1][0];
                 snakePosition[i][1] = snakePosition[i - 1][1];
             }
 
-            // 2. Move Head
-            if (key == 'R')
-                snakePosition[0][0] += 1;
-            if (key == 'L')
-                snakePosition[0][0] -= 1;
-            if (key == 'U')
-                snakePosition[0][1] -= 1;
-            if (key == 'D')
-                snakePosition[0][1] += 1;
+            // --- Move snake head ---
+            if (key == 'R') snakePosition[0][0] += 1;
+            if (key == 'L') snakePosition[0][0] -= 1;
+            if (key == 'U') snakePosition[0][1] -= 1;
+            if (key == 'D') snakePosition[0][1] += 1;
 
-            // 3. Boundary Logic (Screen Wrapping)
-            if (snakePosition[0][0] >= gridCount)
-                snakePosition[0][0] = 0;
-            if (snakePosition[0][0] < 0)
-                snakePosition[0][0] = gridCount - 1;
+            // --- Boundary Collision ---
+            if (snakePosition[0][0] >= gridWidth || snakePosition[0][0] < 0 ||
+                snakePosition[0][1] >= gridHeight || snakePosition[0][1] < 0)
+            {
+                gameOver = true;
+            }
 
-            if (snakePosition[0][1] >= gridCount)
-                snakePosition[0][1] = 0;
-            if (snakePosition[0][1] < 0)
-                snakePosition[0][1] = gridCount - 1;
-
-            // 4. Food Collision Logic
+            // --- Food Collision ---
             if (snakePosition[0][0] == foodX && snakePosition[0][1] == foodY)
             {
                 snakeLength++;
                 score += 10;
 
+                // Spawn new food (ensure not on snake head)
                 do
                 {
-                    isOnSnake = false;
-                    foodX = GetRandomValue(0, gridCount - 1);
-                    foodY = GetRandomValue(0, gridCount - 1);
-
-                    for (int i = 0; i < snakeLength; i++)
-                    {
-                        if (snakePosition[i][0] == foodX && snakePosition[i][1] == foodY)
-                        {
-                            isOnSnake = true;
-                            break;
-                        }
-                    }
-
-                } while (isOnSnake == true);
+                    foodX = GetRandomValue(0, gridWidth - 1);
+                    foodY = GetRandomValue(0, gridHeight - 1);
+                } while (foodX == snakePosition[0][0] && foodY == snakePosition[0][1]);
             }
 
-            // 5. Self Collision Logic
+            // --- Self Collision ---
             for (int i = 1; i < snakeLength; i++)
             {
                 if (snakePosition[0][0] == snakePosition[i][0] &&
@@ -167,59 +106,36 @@ int main()
             }
         }
 
-        // --- Drawing Phase ---
+        // --- Drawing ---
         BeginDrawing();
-        ClearBackground(windowBgColor); // Clear the whole window with dark grey
+        ClearBackground(backgroundColor);
 
-        // Draw the Square Game Board Background
-        DrawRectangle(boardOffsetX, boardOffsetY, boardSize, boardSize, boardBgColor);
+        // Draw grid
+        for (int i = 0; i < gridWidth; i++)
+            for (int j = 0; j < gridHeight; j++)
+                DrawRectangleLines(i * cellSize, j * cellSize, cellSize, cellSize, gridColor);
 
-        // Draw Grid (Offset by boardOffsetX/Y)
-        for (int i = 0; i < gridCount; i++)
-        {
-            for (int j = 0; j < gridCount; j++)
-            {
-                DrawRectangleLines(
-                    boardOffsetX + (i * cellSize),
-                    boardOffsetY + (j * cellSize),
-                    cellSize, cellSize, gridColor);
-            }
-        }
+        // Draw food
+        DrawRectangle(foodX * cellSize, foodY * cellSize, cellSize, cellSize, foodColor);
 
-        // Draw Food (Offset added)
-        DrawingFood(foodX, foodY, cellSize, boardOffsetX, boardOffsetY, foodColor);
-
-        // Draw Snake (Offset added)
+        // Draw snake
         for (int i = 0; i < snakeLength; i++)
-        {
-            DrawRectangle(
-                boardOffsetX + (snakePosition[i][0] * cellSize),
-                boardOffsetY + (snakePosition[i][1] * cellSize),
-                cellSize, cellSize, snakebodyColor);
-        }
+            DrawRectangle(snakePosition[i][0] * cellSize, snakePosition[i][1] * cellSize, cellSize, cellSize, snakeBodyColor);
 
-        // Draw Score
-        std::string scoretext = "Score: " + std::to_string(score);
-        DrawText(scoretext.c_str(), windowWidth - 250, 50, 40, WHITE);
+        // Draw score
+        DrawText(("Score: " + std::to_string(score)).c_str(), screenWidth - 180, 8, 30, DARKGRAY);
 
-        // Draw Title
-        DrawText("SNAKE", 50, 50, 40, WHITE);
-
+        // Draw game over
         if (gameOver)
         {
-            const char *text = "GAME OVER!";
-            int textWidth = MeasureText(text, 60);
-            DrawText(text, (windowWidth - textWidth) / 2, windowHeight / 2 - 50, 60, RED);
-
-            const char *subtext = "Press ESC to exit";
-            int subWidth = MeasureText(subtext, 20);
-            DrawText(subtext, (windowWidth - subWidth) / 2, windowHeight / 2 + 20, 20, LIGHTGRAY);
+            DrawText("GAME OVER!", screenWidth / 2 - 150, screenHeight / 2 - 50, 60, RED);
+            DrawText("Press ESC to exit", screenWidth / 2 - 100, screenHeight / 2 + 20, 20, DARKGRAY);
         }
 
         EndDrawing();
     }
 
     CloseWindow();
-
     return 0;
 }
+
