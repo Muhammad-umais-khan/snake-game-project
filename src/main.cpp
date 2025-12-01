@@ -1,119 +1,119 @@
 #include <raylib.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string> // Needed for std::to_string for the score
+#include <string>
+#include <fstream>
 
 int main()
 {
-    // --- Initialization & Configuration ---
     const int screenWidth = 1200;
     const int screenHeight = 600;
 
-    int stateofgame = 0; // 0 = Menu, 1 = NewGame, 2 = Continue, 3 = Exit
-    int option = 1; 
+    int stateofgame = 0; 
+    int option = 1;
 
     const int cellSize = 40;
     const int gridWidth = screenWidth / cellSize;
     const int gridHeight = screenHeight / cellSize;
 
-    // Game State variables
     bool gameOver = false;
     int score = 0;
 
-    // Snake Initialization
     int snakeLength = 4;
-    int snakeX = screenWidth / 20; // roughly center
+    int snakeX = screenWidth / 20;
     int snakeY = screenHeight / 20;
-    int snakePosition[255][2] = {0}; // Initialize array to 0
+    int snakePosition[255][2] = {0};
 
-    // Initialize entire snake body at start position to prevent "stretching" glitch
     for (int i = 0; i < snakeLength; i++)
     {
         snakePosition[i][0] = snakeX;
         snakePosition[i][1] = snakeY;
     }
 
-    // Input state
     char key = 'R';
 
-    // --- Color Palette (From the "Green" version) ---
     Color backgroundColor = {150, 180, 110, 255};
     Color gridColor = {100, 130, 90, 255};
     Color foodColor = {220, 0, 0, 255};
     Color snakebodyColor = {50, 70, 40, 255};
-    Color  backgroundColorSpecial       = {255, 246, 199, 255};   // #FFF6C7
-    Color  gridColorSpecial      = {232, 223, 194, 255};   // #E8DFC2
-    Color  snakebodyColorSpecial    = {15, 26, 51, 255};      // #0F1A33
-    Color  foodColorSpecial = {255, 79, 163, 255};    // #FF4FA3  
 
-    // Food Initialization
+    Color backgroundColorSpecial = {255, 246, 199, 255};
+    Color gridColorSpecial = {232, 223, 194, 255};
+    Color snakebodyColorSpecial = {15, 26, 51, 255};
+    Color foodColorSpecial = {255, 79, 163, 255};
+
     int foodX = 0;
     int foodY = 0;
 
-    InitWindow(screenWidth, screenHeight, "Snake Game - Combined Version");
-    SetTargetFPS(10); // Snake speed
-
-    // Initial random food placement
-    do
+    // ✔ Correct place: Check save file here ONLY
+    bool hasSaveFile = false;
     {
-        foodX = GetRandomValue(0, gridWidth - 1);
-        foodY = GetRandomValue(0, gridHeight - 1);
-    } while (foodX == snakeX && foodY == snakeY);
+        std::ifstream savecheck("savefile.txt");
+        if (savecheck.is_open())
+        {
+            hasSaveFile = true;
+            savecheck.close();
+        }
+    }
 
-    // --- Main Game Loop ---
+    int highscore = 0;
+    std::ifstream highscorefile("highscore.txt");
+    if (highscorefile.is_open())
+    {
+        highscorefile >> highscore;
+        highscorefile.close();
+    }
+
+    InitWindow(screenWidth, screenHeight, "Snake Game - Combined Version");
+    SetTargetFPS(10);
+
+    //  Removed wrong loading here
+    //  Removed food spawn (should only happen on New Game)
+
     while (!WindowShouldClose())
     {
-        // Only update movement if the game is not over
+        // Highscore update
+        if (score > highscore)
+        {
+            highscore = score;
+            std::ofstream highscorefile("highscore.txt");
+            if (highscorefile.is_open())
+            {
+                highscorefile << highscore;
+                highscorefile.close();
+            }
+        }
+
+        // Movement (unchanged)
         if (!gameOver)
         {
-            // Input Handling (Added checks to prevent 180-degree turns into self)
-            if (IsKeyDown(KEY_RIGHT) && key != 'L')
-                key = 'R';
-            if (IsKeyDown(KEY_LEFT) && key != 'R')
-                key = 'L';
-            if (IsKeyDown(KEY_UP) && key != 'D')
-                key = 'U';
-            if (IsKeyDown(KEY_DOWN) && key != 'U')
-                key = 'D';
+            if (IsKeyDown(KEY_RIGHT) && key != 'L') key = 'R';
+            if (IsKeyDown(KEY_LEFT) && key != 'R') key = 'L';
+            if (IsKeyDown(KEY_UP) && key != 'D') key = 'U';
+            if (IsKeyDown(KEY_DOWN) && key != 'U') key = 'D';
 
-            // 1. Move Body Segments (Shift from tail to head)
             for (int i = snakeLength; i > 0; i--)
             {
                 snakePosition[i][0] = snakePosition[i - 1][0];
                 snakePosition[i][1] = snakePosition[i - 1][1];
             }
 
-            // 2. Move Head based on current direction
-            if (key == 'R')
-                snakePosition[0][0] += 1;
-            if (key == 'L')
-                snakePosition[0][0] -= 1;
-            if (key == 'U')
-                snakePosition[0][1] -= 1;
-            if (key == 'D')
-                snakePosition[0][1] += 1;
+            if (key == 'R') snakePosition[0][0] += 1;
+            if (key == 'L') snakePosition[0][0] -= 1;
+            if (key == 'U') snakePosition[0][1] -= 1;
+            if (key == 'D') snakePosition[0][1] += 1;
 
-            // 3. Boundary Logic (Screen Wrapping)
-            // If snake goes off right, spawn on left (and vice versa)
-            if (snakePosition[0][0] >= gridWidth)
-                snakePosition[0][0] = 0;
-            if (snakePosition[0][0] < 0)
-                snakePosition[0][0] = gridWidth - 1;
+            if (snakePosition[0][0] >= gridWidth) snakePosition[0][0] = 0;
+            if (snakePosition[0][0] < 0) snakePosition[0][0] = gridWidth - 1;
 
-            // If snake goes off bottom, spawn on top (and vice versa)
-            if (snakePosition[0][1] >= gridHeight)
-                snakePosition[0][1] = 0;
-            if (snakePosition[0][1] < 0)
-                snakePosition[0][1] = gridHeight - 1;
+            if (snakePosition[0][1] >= gridHeight) snakePosition[0][1] = 0;
+            if (snakePosition[0][1] < 0) snakePosition[0][1] = gridHeight - 1;
 
-            // 4. Food Collision Logic
             if (snakePosition[0][0] == foodX && snakePosition[0][1] == foodY)
             {
-                // Increase length and score
                 snakeLength++;
                 score += 10;
 
-                // Respawn food ensuring it doesn't spawn on the head
                 do
                 {
                     foodX = GetRandomValue(0, gridWidth - 1);
@@ -121,8 +121,6 @@ int main()
                 } while (snakePosition[0][0] == foodX && snakePosition[0][1] == foodY);
             }
 
-            // 5. Self Collision Logic
-            // Check if head coordinates match any body segment coordinates
             for (int i = 1; i < snakeLength; i++)
             {
                 if (snakePosition[0][0] == snakePosition[i][0] &&
@@ -132,28 +130,90 @@ int main()
                 }
             }
         }
+                // -------- SAVE GAME ---------
+        if (!gameOver && (stateofgame == 1 || stateofgame == 2))
+        {
+            std::ofstream save("savefile.txt");
+            if (save.is_open())
+            {
+                save << snakeLength << "\n";
+                save << score << "\n";
+                save << key << "\n";
+                save << foodX << "\n";
+                save << foodY << "\n";
 
-        // --- Drawing Phase ---
+                for (int i = 0; i < snakeLength; i++)
+                {
+                    save << snakePosition[i][0] << " " << snakePosition[i][1] << "\n";
+                }
+
+                save.close();
+            }
+        }
+
         BeginDrawing();
-        if(stateofgame == 0){
+
+        // -------------------- MENU --------------------
+        if (stateofgame == 0)
+        {
             ClearBackground(RAYWHITE);
-            if(IsKeyPressed(KEY_DOWN)){
-                option += 1;
-            }
-            if(IsKeyPressed(KEY_UP)){
-                option -= 1;
-            }
-            if(option > 4){
-                option = 1;
-            }
-            if(option < 1){
-                option = 4;
-            }
-            if(IsKeyPressed(KEY_ENTER)){
+
+            if (IsKeyPressed(KEY_DOWN)) option++;
+            if (IsKeyPressed(KEY_UP)) option--;
+
+            if (option > 4) option = 1;
+            if (option < 1) option = 4;
+
+            if (IsKeyPressed(KEY_ENTER))
+            {
                 stateofgame = option;
+
+                // ✔ NEW GAME: Reset + spawn food here ONLY
+                if (stateofgame == 2)
+                {
+                    snakeLength = 4;
+                    score = 0;
+                    key = 'R';
+
+                    for (int i = 0; i < snakeLength; i++)
+                    {
+                        snakePosition[i][0] = snakeX;
+                        snakePosition[i][1] = snakeY;
+                    }
+
+                    do
+                    {
+                        foodX = GetRandomValue(0, gridWidth - 1);
+                        foodY = GetRandomValue(0, gridHeight - 1);
+                    } while (foodX == snakeX && foodY == snakeY);
+                }
+
+                // ✔ CONTINUE: Load AFTER pressing Enter
+                if (stateofgame == 1)
+                {
+                    std::ifstream load("savefile.txt");
+                    if (load.is_open())
+                    {
+                        load >> snakeLength;
+                        load >> score;
+                        load >> key;
+                        load >> foodX;
+                        load >> foodY;
+
+                        for (int i = 0; i < snakeLength; i++)
+                        {
+                            load >> snakePosition[i][0];
+                            load >> snakePosition[i][1];
+                        }
+
+                        load.close();
+                    }
+                }
             }
+
+            // Draw menu UI (unchanged)
             DrawText("SNAKE GAME", screenWidth/2 - 150, screenHeight/2 - 180, 50, DARKGRAY);
-            
+
             if(option == 1){
                 DrawRectangle(screenWidth/2 - 160, screenHeight/2 - 100, 320, 50, DARKGRAY);
                 DrawText("Continue", screenWidth/2 - 60, screenHeight/2 - 85, 25, WHITE);
@@ -162,81 +222,91 @@ int main()
                 DrawRectangleLines(screenWidth/2 - 160, screenHeight/2 - 100, 320, 50, WHITE);
                 DrawText("Continue", screenWidth/2 - 60, screenHeight/2 - 85, 25, DARKGRAY);
             }
-            if(option == 2) {
+
+            if(option == 2){
                 DrawRectangle(screenWidth/2 - 160, screenHeight/2 - 20, 320, 50, DARKGRAY);
                 DrawText("New Game", screenWidth/2 - 70, screenHeight/2 - 5, 25, WHITE);
             }
-            else {
+            else{
                 DrawRectangleLines(screenWidth/2 - 160, screenHeight/2 - 20, 320, 50, WHITE);
                 DrawText("New Game", screenWidth/2 - 70, screenHeight/2 - 5, 25, DARKGRAY);
             }
-            if(option == 3) {
+
+            if(option == 3){
                 DrawRectangle(screenWidth/2 - 160, screenHeight/2 + 60, 320, 50, DARKGRAY);
                 DrawText("Desert Theme", screenWidth/2 - 90, screenHeight/2 + 75, 25, WHITE);
             }
-            else  {
+            else{
                 DrawRectangleLines(screenWidth/2 - 160, screenHeight/2 + 60, 320, 50, WHITE);
                 DrawText("Desert Theme", screenWidth/2 - 90, screenHeight/2 + 75, 25, DARKGRAY);
             }
-            if(option == 4) {
+
+            if(option == 4){
                 DrawRectangle(screenWidth/2 - 160, screenHeight/2 + 140, 320, 50, DARKGRAY);
                 DrawText("Exit", screenWidth/2 - 45, screenHeight/2 + 155, 25, WHITE);
             }
-            else  {
+            else{
                 DrawRectangleLines(screenWidth/2 - 160, screenHeight/2 + 140, 320, 50, WHITE);
                 DrawText("Exit", screenWidth/2 - 45, screenHeight/2 + 155, 25, DARKGRAY);
             }
+
             EndDrawing();
             continue;
         }
-        if(stateofgame == 2 || stateofgame == 1 || stateofgame == 3){
-            if(stateofgame == 3) ClearBackground(backgroundColorSpecial); // Special Background
-            else ClearBackground(backgroundColor); // Green background
 
-            // Draw Grid
+        // -------------------- GAME SCREEN --------------------
+        if (stateofgame == 1 || stateofgame == 2 || stateofgame == 3)
+        {
+            if (stateofgame == 3) ClearBackground(backgroundColorSpecial);
+            else ClearBackground(backgroundColor);
+
             for (int i = 0; i < gridWidth; i++)
             {
                 for (int j = 0; j < gridHeight; j++)
-                {   
-                    if(stateofgame == 3){
-                        DrawRectangleLinesEx(
-                            (struct Rectangle){i * cellSize, j * cellSize, cellSize, cellSize},
-                            2, gridColorSpecial);
-                    }
+                {
+                    if (stateofgame == 3)
+                        DrawRectangleLinesEx((Rectangle){i*cellSize, j*cellSize, cellSize, cellSize}, 2, gridColorSpecial);
                     else
-                    DrawRectangleLinesEx(
-                        (struct Rectangle){i * cellSize, j * cellSize, cellSize, cellSize},
-                        2, gridColor);
+                        DrawRectangleLinesEx((Rectangle){i*cellSize, j*cellSize, cellSize, cellSize}, 2, gridColor);
                 }
             }
 
-            // Draw Food
-            if(stateofgame == 3) DrawRectangle(foodX * cellSize, foodY * cellSize, cellSize, cellSize, foodColorSpecial);
-            else DrawRectangle(foodX * cellSize, foodY * cellSize, cellSize, cellSize, foodColor);
+            if (stateofgame == 3)
+                DrawRectangle(foodX * cellSize, foodY * cellSize, cellSize, cellSize, foodColorSpecial);
+            else
+                DrawRectangle(foodX * cellSize, foodY * cellSize, cellSize, cellSize, foodColor);
 
-            // Draw Snake
             for (int i = 0; i < snakeLength; i++)
             {
-                if(stateofgame == 3) DrawRectangle((snakePosition[i][0]) * cellSize, (snakePosition[i][1]) * cellSize, cellSize, cellSize, snakebodyColorSpecial);
-                else DrawRectangle((snakePosition[i][0]) * cellSize, (snakePosition[i][1]) * cellSize, cellSize, cellSize, snakebodyColor);
+                if (stateofgame == 3)
+                    DrawRectangle(snakePosition[i][0]*cellSize, snakePosition[i][1]*cellSize, cellSize, cellSize, snakebodyColorSpecial);
+                else
+                    DrawRectangle(snakePosition[i][0]*cellSize, snakePosition[i][1]*cellSize, cellSize, cellSize, snakebodyColor);
             }
 
-            // Draw Score
             std::string scoretext = "Score: " + std::to_string(score);
             DrawText(scoretext.c_str(), screenWidth - 180, 8, 30, DARKGRAY);
 
-            // Draw Game Over Screen
             if (gameOver)
             {
-                DrawText("GAME OVER!", screenWidth / 2 - 150, screenHeight / 2 - 50, 60, RED);
-                DrawText("Press ESC to exit", screenWidth / 2 - 100, screenHeight / 2 + 20, 20, DARKGRAY);
+                DrawText("GAME OVER!", screenWidth/2 - 150, screenHeight/2 - 50, 60, RED);
+                DrawText("Press ESC to exit", screenWidth/2 - 100, screenHeight/2 + 20, 20, DARKGRAY);
+
+                // ✔ Delete save file ONLY on death
+                std::ifstream savefile("savefile.txt");
+                if (savefile.is_open())
+                {
+                    savefile.close();
+                    remove("savefile.txt");
+                }
             }
 
             EndDrawing();
         }
-        if(stateofgame == 4) break;
+
+        if (stateofgame == 4) break;
     }
-        CloseWindow();
-    
+
+    CloseWindow();
     return 0;
 }
