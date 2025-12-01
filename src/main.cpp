@@ -1,6 +1,5 @@
 #include <raylib.h>
 #include <stdlib.h>
-// #include <math.h> commented this out as it's not used
 #include <string>
 
 void DrawingFood(int foodX, int foodY, int cellSize, int boardOffsetX, int boardOffsetY, Color foodColor)
@@ -15,7 +14,7 @@ void DrawingFood(int foodX, int foodY, int cellSize, int boardOffsetX, int board
 int main()
 {
     // this makes the game window use the current screen resolution
-    InitWindow(0, 0, "Snake Game - Square View");
+    InitWindow(0, 0, "Snake Game - Wide View");
 
     ToggleFullscreen(); // fullscreen mode for better immersion ig
     SetTargetFPS(10);
@@ -26,20 +25,24 @@ int main()
 
     const int cellSize = 60;
 
-    // checking which is smaller
-    int minDimension = (windowWidth < windowHeight) ? windowWidth : windowHeight;
+    // --- CHANGED LOGIC START ---
+    // Instead of finding minDimension, we calculate width and height separately
+    // We still remove 120px for padding
+    int rawBoardWidth = windowWidth - 120;
+    int rawBoardHeight = windowHeight - 120;
 
-    // screen ke size ko pehla 120 se minus karaya for some padding
-    int rawBoardSize = minDimension - 120;
+    // Make sure both dimensions are divisible by cellSize
+    const int boardWidth = rawBoardWidth - (rawBoardWidth % cellSize);
+    const int boardHeight = rawBoardHeight - (rawBoardHeight % cellSize);
 
-    // phir check kia ke whether it's divisible by cellSize or not.
-    // if not then we minus the remainder to make it divisible
-    const int boardSize = rawBoardSize - (rawBoardSize % cellSize);
+    // Calculate grid counts for X (width) and Y (height) separately
+    const int gridCountX = boardWidth / cellSize;
+    const int gridCountY = boardHeight / cellSize;
 
-    const int gridCount = boardSize / cellSize;
-
-    const int boardOffsetX = (windowWidth - boardSize) / 2;
-    const int boardOffsetY = (windowHeight - boardSize) / 2;
+    // Recalculate offsets to center the rectangular board
+    const int boardOffsetX = (windowWidth - boardWidth) / 2;
+    const int boardOffsetY = (windowHeight - boardHeight) / 2;
+    // --- CHANGED LOGIC END ---
 
     bool gameOver = false;
     int score = 0;
@@ -47,9 +50,11 @@ int main()
     int snakeLength = 4;
 
     // snake will spawn in middle of the GRID
-    int snakeX = gridCount / 2;
-    int snakeY = gridCount / 2;
-    int snakePosition[255][2] = {0};
+    int snakeX = gridCountX / 2;
+    int snakeY = gridCountY / 2;
+
+    // Increased array size because a wider map allows for a longer snake
+    int snakePosition[1024][2] = {0};
 
     // entire snake body
     for (int i = 0; i < snakeLength; i++)
@@ -77,8 +82,9 @@ int main()
     do
     {
         isOnSnake = false;
-        foodX = GetRandomValue(0, gridCount - 1);
-        foodY = GetRandomValue(0, gridCount - 1);
+        // Updated to use specific X and Y grid counts
+        foodX = GetRandomValue(0, gridCountX - 1);
+        foodY = GetRandomValue(0, gridCountY - 1);
         for (int i = 0; i < snakeLength; i++)
         {
             if (snakePosition[i][0] == foodX && snakePosition[i][1] == foodY)
@@ -122,15 +128,17 @@ int main()
                 snakePosition[0][1] += 1;
 
             // 3. Boundary Logic (Screen Wrapping)
-            if (snakePosition[0][0] >= gridCount)
+            // Updated to check against gridCountX for width
+            if (snakePosition[0][0] >= gridCountX)
                 snakePosition[0][0] = 0;
             if (snakePosition[0][0] < 0)
-                snakePosition[0][0] = gridCount - 1;
+                snakePosition[0][0] = gridCountX - 1;
 
-            if (snakePosition[0][1] >= gridCount)
+            // Updated to check against gridCountY for height
+            if (snakePosition[0][1] >= gridCountY)
                 snakePosition[0][1] = 0;
             if (snakePosition[0][1] < 0)
-                snakePosition[0][1] = gridCount - 1;
+                snakePosition[0][1] = gridCountY - 1;
 
             // 4. Food Collision Logic
             if (snakePosition[0][0] == foodX && snakePosition[0][1] == foodY)
@@ -141,8 +149,9 @@ int main()
                 do
                 {
                     isOnSnake = false;
-                    foodX = GetRandomValue(0, gridCount - 1);
-                    foodY = GetRandomValue(0, gridCount - 1);
+                    // Updated Random limits
+                    foodX = GetRandomValue(0, gridCountX - 1);
+                    foodY = GetRandomValue(0, gridCountY - 1);
 
                     for (int i = 0; i < snakeLength; i++)
                     {
@@ -171,13 +180,13 @@ int main()
         BeginDrawing();
         ClearBackground(windowBgColor); // Clear the whole window with dark grey
 
-        // Draw the Square Game Board Background
-        DrawRectangle(boardOffsetX, boardOffsetY, boardSize, boardSize, boardBgColor);
+        // Draw the Rectangular Game Board Background
+        DrawRectangle(boardOffsetX, boardOffsetY, boardWidth, boardHeight, boardBgColor);
 
-        // Draw Grid (Offset by boardOffsetX/Y)
-        for (int i = 0; i < gridCount; i++)
+        // Draw Grid (Updated loops to use gridCountX and gridCountY)
+        for (int i = 0; i < gridCountX; i++)
         {
-            for (int j = 0; j < gridCount; j++)
+            for (int j = 0; j < gridCountY; j++)
             {
                 DrawRectangleLines(
                     boardOffsetX + (i * cellSize),
