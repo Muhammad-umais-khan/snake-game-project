@@ -6,7 +6,6 @@
 #include <cstdio>
 #include <cmath> // Added: Required for the ceil() function
 
-// --- Enum from Main Code ---
 enum GameMode
 {
     EASY = 0,
@@ -15,7 +14,7 @@ enum GameMode
     STORY = 3
 };
 
-// --- Helper Function from Main Code ---
+// Helper Function from Main Code
 bool IsTileBlocked(int x, int y, int snakePosition[][2], int snakeLength, int hurdles[][2], int hurdleCount, bool hurdlesActive)
 {
     for (int i = 0; i < snakeLength; i++)
@@ -38,7 +37,7 @@ bool IsTileBlocked(int x, int y, int snakePosition[][2], int snakeLength, int hu
 
 int main()
 {
-    // --- STEP 1: Full Screen Initialization ---
+    // Full Screen Initialization
     InitWindow(0, 0, "Snake Game - Ultimate Version");
     SetTargetFPS(60);
 
@@ -46,7 +45,7 @@ int main()
     const int screenHeight = GetScreenHeight();
     const int cellSize = 40;
 
-    // --- STEP 2: Calculate Board Size ---
+    // Calculate Board Size
     int rawBoardWidth = screenWidth - 120;
     int rawBoardHeight = screenHeight - 120;
     const int boardWidth = rawBoardWidth - (rawBoardWidth % cellSize);
@@ -58,7 +57,7 @@ int main()
     const int boardOffsetX = (screenWidth - boardWidth) / 2;
     const int boardOffsetY = (screenHeight - boardHeight) / 2;
 
-    // --- STEP 3: Game Variables ---
+    // Game Variables
     int stateofgame = 0;
     int menuOption = 1;
 
@@ -97,7 +96,7 @@ int main()
     int hurdles[maxHurdles][2];
     int hurdleCount = 0;
 
-    // --- STEP 4: Initialize Hurdles ---
+    // Initialize Hurdles
     {
         int lastX = gridCountX - 1;
         int lastY = gridCountY - 1;
