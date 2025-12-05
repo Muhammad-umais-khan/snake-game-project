@@ -1,195 +1,226 @@
-🐍 Snake Game - Ultimate Version
+# 🐍 Snake Game - Ultimate Version
 
-Group Name: 404 Not Found
+## 👥 Group Information
 
-Members: Muneeb ur Rehman, Muhammad Umais, Sadia Sahar
+**Group Name:** 404 Not Found
+**Members:**
 
-Welcome to the Snake Game - Ultimate Version. This is a robust implementation of the classic arcade game built from scratch using C++ and the Raylib library. It features multiple difficulties, a story mode with progression, persistent save files, and dynamic theming.
+* Muneeb ur Rehman
+* Muhammad Umais
+* Sadia Sahar
 
-🛠️ Requirements & Setup
+---
 
-This project was designed to be simple to set up.
+## 🎮 Overview
 
-1. The Only Dependency: Raylib
+Welcome to the **Snake Game - Ultimate Version**.
+This is a robust implementation of the classic arcade game built from scratch using **C++** and the **Raylib** library.
+It features:
 
-You do not need to install complex engines or multiple libraries. The only requirement for this project is:
+* Multiple difficulty modes
+* Story mode with progression
+* Persistent save files
+* Dynamic themes
 
-Raylib (A simple and easy-to-use library for videogames programming).
+---
 
-2. Project Files
+## 🛠️ Requirements & Setup
 
-While our project folder contains various source and header files, the external requirement is strictly Raylib.
+### **1. The Only Dependency: Raylib**
 
-Ensure your C++ compiler (Visual Studio, VS Code, or Xcode) is linked to Raylib.
+Raylib is the only external library required.
+No complex engines or multiple libraries are needed.
 
-Compile and run main.cpp.
+### **2. Project Files**
 
-💻 Code Walkthrough & Explanation
+Your C++ compiler (Visual Studio / VS Code / Xcode) must be linked to Raylib.
 
-Here is a detailed breakdown of how our code works, explained section by section.
+Steps:
 
-📚 1. Libraries and Headers
+1. Link Raylib
+2. Compile `main.cpp`
+3. Run the executable
 
-At the very top of the file, we include the necessary tools:
+---
 
-#include <raylib.h>: The core library used for graphics, window management, and keyboard input.
+## 💻 Code Walkthrough & Explanation
 
-#include <stdlib.h>: Used for rand() and GetRandomValue() (to spawn food in random spots).
+### **📚 1. Libraries and Headers**
 
-#include <string>: Allows us to use text variables (like "Score: 100" or player names).
+* `#include <raylib.h>` — Graphics, window, input
+* `#include <stdlib.h>` — Random functions
+* `#include <string>` — Text and string handling
+* `#include <fstream>` — Save/Load file system
+* `#include <vector>` — Dynamic arrays
+* `#include <cstdio>` — For deleting save files
+* `#include <cmath>` — Used for `ceil()` in Story Mode
 
-#include <fstream>: Stands for "File Stream." This is crucial for our Save/Load and High Score systems.
+---
 
-#include <vector>: Included for dynamic array support.
+## ⚙️ 2. Global Structures and Enums
 
-#include <cstdio>: Used for the remove() command to delete save files when the player dies.
+### **`enum GameMode`**
 
-#include <cmath>: Used for the ceil() function to round numbers (used in the Story Mode countdown timer).
+Used to make code readable:
 
-⚙️ 2. Global Structures and Enums
+```
+EASY = 0
+NORMAL = 1
+HARD = 2
+STORY = 3
+```
 
-To make the code clean and professional, we grouped data together instead of using hundreds of loose variables.
+### **`struct GameState`**
 
-enum GameMode:
+A container holding all game variables:
 
-This creates custom labels for numbers. Instead of remembering "0 is Easy" and "3 is Story", we can write game.currentMode = STORY.
+* `stateofgame` (Menu vs Gameplay)
+* `snakePosition[1024][2]` (Snake body coordinates)
+* Story Logic:
 
-struct GameState:
+  * `isLevelTransitioning`
+  * `storyLevel`
+* File logic:
 
-What is it? This is a custom container that holds all the variables for the game.
+  * `hasSaveFile`
 
-Why use it? It allows us to pass the entire game's data (Score, Snake Position, Mode, etc.) into functions using a single variable (game).
+---
 
-It contains:
+## 📏 3. Global Constants
 
-State: stateofgame (Menu vs Gameplay).
+* `screenWidth` / `screenHeight`
+* `cellSize = 40` (Each grid cell is 40×40 pixels)
+* `boardOffsetX` — Centers the board on screen
 
-Snake: snakePosition[1024][2] (An array holding X and Y coordinates for every body part).
+---
 
-Story Logic: isLevelTransitioning and storyLevel (to handle level-ups).
+## 🧩 4. Function Prototypes
 
-File Logic: hasSaveFile (to enable the "Continue" button).
+Functions like `ResetGame()` and `DrawMenu()` are declared before `main()` to keep code organized.
 
-📏 3. Global Constants
+---
 
-These are calculated once to handle the game grid:
+## 🚀 5. The main() Function
 
-screenWidth / screenHeight: The size of the application window.
+### **Initialization**
 
-cellSize: Set to 40 pixels. Every grid square (snake part, food, wall) is 40x40.
+* Starts the window using `InitWindow()`
+* Sets FPS to 60
+* Calls `InitGameGrid()`
+* Creates `GameState game`
+* Initializes hurdles and checks for save files
 
-boardOffsetX: Calculates padding to ensure the game board is perfectly centered in the window.
+### **Game Loop**
 
-🧩 4. Function Prototypes
+Runs until window closes:
 
-These are "declarations" listed before main(). They tell the C++ compiler: "Trust us, these functions (like ResetGame or DrawMenu) exist further down in the file." This allows us to organize the code neatly.
+* **Update Phase:**
 
-🚀 5. The main() Function
+  * Menus → `UpdateMenu()`
+  * Gameplay → `UpdateGameplay()`
 
-This is the entry point of the application.
+* **Draw Phase:**
+  Draws menu or gameplay screen based on state
 
-Initialization (InitWindow): Starts the graphics engine and sets the target FPS to 60.
+---
 
-Grid Setup (InitGameGrid): Calculates how many 40px cells fit on your specific screen.
+## 🧠 6. Logic Functions (The Brains)
 
-State Initialization:
+### **`InitGameGrid()`**
 
-Creates the GameState game object.
+Ensures the grid fits perfectly on the screen.
 
-Calls InitHurdles to build the map.
+### **`IsTileBlocked()`**
 
-Calls LoadHighscore and CheckSaveFile to read from the hard drive.
+Checks if a tile is:
 
-The Game Loop (while):
+* Occupied by snake
+* Occupied by a wall
 
-Update Phase: If in Menu, run UpdateMenu(). If Playing, run UpdateGameplay().
+Prevents food spawning inside obstacles.
 
-Draw Phase: Clears the screen, draws the appropriate scene, and displays the result.
+### **`ResetGame()`**
 
-🧠 6. Logic Functions (The Brains)
+* Score → 0
+* Snake length → 4
+* Snake resets to center
+* Food spawns safely (checked with loop)
 
-InitGameGrid(): Performs math (Modulus %) to ensure the grid fits on the screen without cutting off any squares.
+### **`InitHurdles()`**
 
-IsTileBlocked():
+Draws:
 
-Crucial Function: Before spawning food or moving, this checks if a specific coordinate (x, y) is occupied by the Snake's body OR a Wall.
+* L-shaped corners
+* Middle barrier
 
-It prevents bugs where food spawns inside walls.
+### **`SaveGame()` / `LoadGame()`**
 
-ResetGame():
+Uses file stream to write/read `savefile.txt`.
 
-Resets Score to 0 and Snake Length to 4.
+---
 
-Places the snake back in the center.
+## 🎮 7. Update Functions
 
-Uses a do-while loop to find a valid spawn point for the food.
+### **`UpdateMenu(GameState &game)`**
 
-InitHurdles():
+Handles:
 
-Contains the hard-coded coordinates for the map. It draws "L" shapes in the corners and the barrier in the middle.
+* Arrow key navigation
+* Theme switching
+* New Game
+* Continue
 
-SaveGame() & LoadGame():
+### **`UpdateGameplay(GameState &game)`**
 
-Uses std::ofstream (output) and std::ifstream (input) to write/read the game variables to a text file named savefile.txt.
+#### Story Mode
 
-🎮 7. Update Functions (Input & Math)
+* Level up when score > 50 or > 100
+* Snake resets safely
+* Countdown timer appears
 
-UpdateMenu(GameState &game):
+#### Movement & Timer
 
-Handles Navigation (Up/Down keys).
+* `moveTimer` increases with frame time
+* When it exceeds `moveInterval`, snake moves
 
-Handles Logic: If you press "Theme", it swaps the colors. If you press "New Game", it calls ResetGame.
+#### Collision Detection
 
-UpdateGameplay(GameState &game):
+* Wall collision → Game Over
+* Hurdle collision → Game Over
+* Self collision → Game Over
 
-Story Mode Check: Checks if score > 50 or > 100. If so, it triggers a Level Up, resets the snake position (Safe Spawn), and starts a countdown.
+#### Auto-Saving
 
-Timer: Increases moveTimer by GetFrameTime(). When it exceeds moveInterval, the snake moves.
+Game progress is saved on every move.
 
-Movement Logic:
+---
 
-Shifts every body segment to the position of the segment in front of it.
+## 🎨 8. Drawing Functions
 
-Updates the Head position based on the key (Direction).
+### **`DrawMenu()`**
 
-Collision Detection:
+* Updates based on theme (Classic / Desert)
+* Draws UI elements
 
-Walls: If x < 0 or x > width, TRIGGER Game Over.
+### **`DrawGameplay()`**
 
-Hurdles: Loops through walls; if Head == Wall, TRIGGER Game Over.
+* Draws grid
+* Draws snake
+* Draws food
+* Shows overlays:
 
-Self: Loops through body; if Head == Body, TRIGGER Game Over.
+  * Level-up countdown
+  * Game Over screen
 
-Auto-Save: Calls SaveGame() every time the snake moves so progress is never lost.
+---
 
-🎨 8. Drawing Functions (The Visuals)
+## 🕹️ Controls
 
-DrawMenu():
+| Action                     | Key        |
+| -------------------------- | ---------- |
+| Move Snake / Navigate Menu | Arrow Keys |
+| Select Menu Option         | Enter      |
+| Pause / Go Back            | ESC        |
+| Restart After Game Over    | R          |
 
-Checks the game.theme variable.
-
-If "Classic", uses Green colors. If "Desert", uses Sand/Blue colors.
-
-Draws the rectangles and text for the UI.
-
-DrawGameplay():
-
-Grid: Uses for loops to draw the grid lines.
-
-Snake & Food: Loops through the arrays and draws DrawRectangle for every part.
-
-Overlays:
-
-If isLevelTransitioning is true, it draws a semi-transparent black screen with a countdown.
-
-If gameOver is true, it displays the Game Over text and instructions to restart.
-
-🕹️ Controls
-
-Arrow Keys: Move Snake / Navigate Menu.
-
-Enter: Select Menu Option.
-
-ESC: Pause Game / Go Back.
-
-R: Restart (on Game Over screen).
+---
