@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string>
 #include <fstream>
-#include <vector>
 #include <cstdio>
 #include <cmath>
+// Removed <vector> as we are using fixed arrays
 
 // Enum
 enum GameMode
@@ -14,6 +14,10 @@ enum GameMode
     HARD = 2,
     STORY = 3
 };
+
+// Maximum limits for arrays (Safety Constants)
+const int MAX_SNAKE_LENGTH = 1024;
+const int MAX_HURDLES = 100;
 
 // Struct to hold the entire Game State
 struct GameState
@@ -29,10 +33,10 @@ struct GameState
     int score = 0;
     int highscore = 0;
 
-    // Snake Data
+    // Snake Data (FIXED ARRAY)
     int snakeLength = 4;
-    int snakePosition[1024][2] = {0};
-    int snakeX, snakeY; // Initial positions
+    int snakePosition[MAX_SNAKE_LENGTH][2] = {0}; // Replaces Vector
+    int snakeX, snakeY;                           // Initial positions
     char key = 'R';
 
     // Food Data
@@ -49,8 +53,8 @@ struct GameState
     float transitionTimer = 0.0f;
     const float transitionDuration = 3.0f;
 
-    // Hurdles
-    int hurdles[100][2];
+    // Hurdles (FIXED ARRAY)
+    int hurdles[MAX_HURDLES][2]; // Replaces Vector
     int hurdleCount = 0;
 
     // File State
@@ -153,7 +157,7 @@ void InitGameGrid()
     boardOffsetY = (screenHeight - boardHeight) / 2;
 }
 
-// Helper: The block checking logic from original code
+// Helper: The block checking logic
 bool IsTileBlocked(int x, int y, GameState &game, bool hurdlesActive)
 {
     for (int i = 0; i < game.snakeLength; i++)
@@ -214,60 +218,49 @@ void InitHurdles(GameState &game)
     int lastY = gridCountY - 1;
     int idx = 0;
 
+    // Helper lambda to safely add hurdles within array bounds
+    auto addHurdle = [&](int x, int y)
+    {
+        if (idx < MAX_HURDLES)
+        {
+            game.hurdles[idx][0] = x;
+            game.hurdles[idx][1] = y;
+            idx++;
+        }
+    };
+
     // Corners
-    game.hurdles[idx][0] = 0;
-    game.hurdles[idx++][1] = 0;
-    game.hurdles[idx][0] = 1;
-    game.hurdles[idx++][1] = 0;
-    game.hurdles[idx][0] = 2;
-    game.hurdles[idx++][1] = 0;
-    game.hurdles[idx][0] = 0;
-    game.hurdles[idx++][1] = 1;
-    game.hurdles[idx][0] = 0;
-    game.hurdles[idx++][1] = 2;
+    addHurdle(0, 0);
+    addHurdle(1, 0);
+    addHurdle(2, 0);
+    addHurdle(0, 1);
+    addHurdle(0, 2);
 
-    game.hurdles[idx][0] = lastX;
-    game.hurdles[idx++][1] = lastY;
-    game.hurdles[idx][0] = lastX - 1;
-    game.hurdles[idx++][1] = lastY;
-    game.hurdles[idx][0] = lastX - 2;
-    game.hurdles[idx++][1] = lastY;
-    game.hurdles[idx][0] = lastX;
-    game.hurdles[idx++][1] = lastY - 1;
-    game.hurdles[idx][0] = lastX;
-    game.hurdles[idx++][1] = lastY - 2;
+    addHurdle(lastX, lastY);
+    addHurdle(lastX - 1, lastY);
+    addHurdle(lastX - 2, lastY);
+    addHurdle(lastX, lastY - 1);
+    addHurdle(lastX, lastY - 2);
 
-    game.hurdles[idx][0] = lastX;
-    game.hurdles[idx++][1] = 0;
-    game.hurdles[idx][0] = lastX - 1;
-    game.hurdles[idx++][1] = 0;
-    game.hurdles[idx][0] = lastX - 2;
-    game.hurdles[idx++][1] = 0;
-    game.hurdles[idx][0] = lastX;
-    game.hurdles[idx++][1] = 1;
-    game.hurdles[idx][0] = lastX;
-    game.hurdles[idx++][1] = 2;
+    addHurdle(lastX, 0);
+    addHurdle(lastX - 1, 0);
+    addHurdle(lastX - 2, 0);
+    addHurdle(lastX, 1);
+    addHurdle(lastX, 2);
 
-    game.hurdles[idx][0] = 0;
-    game.hurdles[idx++][1] = lastY;
-    game.hurdles[idx][0] = 1;
-    game.hurdles[idx++][1] = lastY;
-    game.hurdles[idx][0] = 2;
-    game.hurdles[idx++][1] = lastY;
-    game.hurdles[idx][0] = 0;
-    game.hurdles[idx++][1] = lastY - 1;
-    game.hurdles[idx][0] = 0;
-    game.hurdles[idx++][1] = lastY - 2;
+    addHurdle(0, lastY);
+    addHurdle(1, lastY);
+    addHurdle(2, lastY);
+    addHurdle(0, lastY - 1);
+    addHurdle(0, lastY - 2);
 
     // Middle Barrier
     int gap = 4;
     int startY = (gridCountY - gap) / 2 - 1;
     for (int i = 0; i < 7; i++)
     {
-        game.hurdles[idx][0] = i + (gridCountX - 7) / 2;
-        game.hurdles[idx++][1] = startY;
-        game.hurdles[idx][0] = i + (gridCountX - 7) / 2;
-        game.hurdles[idx++][1] = startY + gap + 1;
+        addHurdle(i + (gridCountX - 7) / 2, startY);
+        addHurdle(i + (gridCountX - 7) / 2, startY + gap + 1);
     }
     game.hurdleCount = idx;
 }
@@ -302,6 +295,11 @@ void LoadGame(GameState &game)
             int modeInt;
             load >> game.snakeLength >> game.score >> game.key >> game.foodX >> game.foodY >> modeInt;
             game.currentMode = (GameMode)modeInt;
+
+            // Safety check: Don't load more segments than the array can hold
+            if (game.snakeLength > MAX_SNAKE_LENGTH)
+                game.snakeLength = MAX_SNAKE_LENGTH;
+
             for (int i = 0; i < game.snakeLength; i++)
             {
                 load >> game.snakePosition[i][0] >> game.snakePosition[i][1];
@@ -411,9 +409,15 @@ void UpdateGameplay(GameState &game)
     {
         int nextLevel = 1;
         if (game.score >= 50 && game.score < 100)
+        {
+            game.moveInterval = 0.09f;
             nextLevel = 2;
+        }
         else if (game.score >= 100)
+        {
             nextLevel = 3;
+            game.moveInterval -= 0.08f;
+        }
 
         if (nextLevel > game.storyLevel)
         {
@@ -556,10 +560,17 @@ void UpdateGameplay(GameState &game)
         // Collision: Food
         if (nextX == game.foodX && nextY == game.foodY)
         {
-            game.snakeLength++;
-            game.score += 10;
-            if (game.moveInterval > 0.05f)
-                game.moveInterval -= 0.001f;
+            // CRITICAL ARRAY SAFETY CHECK:
+            // Ensure we never write past index 1024
+            if (game.snakeLength < MAX_SNAKE_LENGTH - 1)
+            {
+                game.snakeLength++;
+                game.score += 10;
+                if (game.moveInterval > 0.05f)
+                    game.moveInterval -= 0.001f;
+            }
+            // If snake is max length, you still get points, but don't grow visually
+
             do
             {
                 game.foodX = GetRandomValue(0, gridCountX - 1);
