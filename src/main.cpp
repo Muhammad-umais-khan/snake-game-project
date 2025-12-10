@@ -429,7 +429,7 @@ void UpdateGameplay(GameState &game)
             game.storyLevel = nextLevel;
             game.isLevelTransitioning = true;
             game.transitionTimer = game.transitionDuration;
-
+            SaveGame(game);
             // Safe Spawn Pattern logic
             game.key = 'R';
             int cx = gridCountX / 2;
@@ -582,6 +582,7 @@ void UpdateGameplay(GameState &game)
                 game.foodX = GetRandomValue(0, gridCountX - 1);
                 game.foodY = GetRandomValue(0, gridCountY - 1);
             } while (IsTileBlocked(game.foodX, game.foodY, game, hurdlesActive));
+            SaveGame(game);
         }
 
         // Collision: Self
@@ -595,9 +596,6 @@ void UpdateGameplay(GameState &game)
                 }
             }
         }
-
-        if (!game.gameOver)
-            SaveGame(game);
     }
 }
 
