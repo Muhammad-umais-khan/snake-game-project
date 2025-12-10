@@ -103,26 +103,30 @@ int main()
     {
 
         // 1. UPDATE LOGIC
-        if (game.stateofgame == 0)
+
+        switch (game.stateofgame)
         {
+        case 0:
             UpdateMenu(game);
-        }
-        if (game.stateofgame == 2)
-        {
+            break;
+        case 2:
             if (IsKeyPressed(KEY_ESCAPE))
                 game.stateofgame = 0;
             UpdateGameplay(game);
+            break;
         }
 
         // 2. DRAWING
         BeginDrawing();
-        if (game.stateofgame == 0)
+
+        switch (game.stateofgame)
         {
+        case 0:
             DrawMenu(game);
-        }
-        else if (game.stateofgame == 2)
-        {
+            break;
+        case 2:
             DrawGameplay(game);
+            break;
         }
         EndDrawing();
     }
@@ -348,7 +352,8 @@ void UpdateMenu(GameState &game)
     if (game.menuOption < 1)
         game.menuOption = 5;
 
-    if (game.menuOption == 4) // Mode selection
+    // Mode selection (Specific logic for one option, keeping as if)
+    if (game.menuOption == 4)
     {
         if (IsKeyPressed(KEY_RIGHT))
         {
@@ -368,23 +373,27 @@ void UpdateMenu(GameState &game)
 
     if (IsKeyPressed(KEY_ENTER))
     {
-        if (game.menuOption == 5)
-            exit(0);              // Exit
-        if (game.menuOption == 3) // Theme
+
+        switch (game.menuOption)
         {
+        case 1: // Continue
+            LoadGame(game);
+            break;
+        case 2: // New Game
+            game.stateofgame = 2;
+            ResetGame(game, true);
+            break;
+        case 3: // Theme
             if (game.theme == "Classic")
                 game.theme = "Desert";
             else
                 game.theme = "Classic";
-        }
-        if (game.menuOption == 2) // New Game
-        {
-            game.stateofgame = 2;
-            ResetGame(game, true);
-        }
-        if (game.menuOption == 1) // Continue
-        {
-            LoadGame(game);
+            break;
+        case 5: // Exit
+            exit(0);
+            break;
+        default:
+            break;
         }
     }
 }
@@ -469,6 +478,7 @@ void UpdateGameplay(GameState &game)
     // Input Handling
     if (game.allowMove)
     {
+        // Directional keys check is specific, keep as if-else due to '!=' checks
         if (IsKeyPressed(KEY_RIGHT) && game.key != 'L')
         {
             game.key = 'R';
@@ -501,14 +511,21 @@ void UpdateGameplay(GameState &game)
         int nextX = game.snakePosition[0][0];
         int nextY = game.snakePosition[0][1];
 
-        if (game.key == 'R')
+        switch (game.key)
+        {
+        case 'R':
             nextX++;
-        if (game.key == 'L')
+            break;
+        case 'L':
             nextX--;
-        if (game.key == 'U')
+            break;
+        case 'U':
             nextY--;
-        if (game.key == 'D')
+            break;
+        case 'D':
             nextY++;
+            break;
+        }
 
         // Collision: Walls
         if (nextX < 0 || nextX >= gridCountX || nextY < 0 || nextY >= gridCountY)
@@ -627,14 +644,22 @@ void DrawMenu(GameState &game)
         if (i == 4)
         {
             display = "Mode: ";
-            if (game.currentMode == EASY)
+
+            switch (game.currentMode)
+            {
+            case EASY:
                 display += "< Easy >";
-            else if (game.currentMode == NORMAL)
+                break;
+            case NORMAL:
                 display += "< Normal >";
-            else if (game.currentMode == HARD)
+                break;
+            case HARD:
                 display += "< Hard >";
-            else
+                break;
+            case STORY:
                 display += "< Story >";
+                break;
+            }
         }
 
         if (game.menuOption == i)
@@ -739,14 +764,21 @@ void DrawGameplay(GameState &game)
             float eyeOffsetY = 0;
             float eyeSep = 8; // Distance from center
 
-            if (game.key == 'R')
+            switch (game.key)
+            {
+            case 'R':
                 eyeOffsetX = eyeSep;
-            else if (game.key == 'L')
+                break;
+            case 'L':
                 eyeOffsetX = -eyeSep;
-            else if (game.key == 'U')
+                break;
+            case 'U':
                 eyeOffsetY = -eyeSep;
-            else if (game.key == 'D')
+                break;
+            case 'D':
                 eyeOffsetY = eyeSep;
+                break;
+            }
 
             // Determine Eye Placement relative to direction
             Vector2 leftEye, rightEye;
@@ -785,26 +817,27 @@ void DrawGameplay(GameState &game)
 
     std::string mText;
     Color mColor;
-    if (game.currentMode == EASY)
+
+    switch (game.currentMode)
     {
+    case EASY:
         mText = "EASY";
         mColor = GREEN;
-    }
-    else if (game.currentMode == NORMAL)
-    {
+        break;
+    case NORMAL:
         mText = "NORMAL";
         mColor = ORANGE;
-    }
-    else if (game.currentMode == HARD)
-    {
+        break;
+    case HARD:
         mText = "HARD";
         mColor = RED;
-    }
-    else
-    {
+        break;
+    case STORY:
         mText = "STORY - LVL " + std::to_string(game.storyLevel);
         mColor = SKYBLUE;
+        break;
     }
+
     DrawText(mText.c_str(), screenWidth / 2 - MeasureText(mText.c_str(), 30) / 2, 20, 30, mColor);
 
     // Transition Overlay
