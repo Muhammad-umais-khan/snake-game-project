@@ -1,254 +1,211 @@
-# Snake Game in C using Raylib — Detailed Line-by-Line Explanation
+# 🐍 Snake Game — Ultimate Version
 
-This README explains **every line** of the provided Snake Game code in a clear, structured, and beginner-friendly way. It breaks the program into sections: window setup, variables, game logic, movement, food system, collision, and drawing.
-
----
-
-## ⭐ Overview
-This project is a simple **Snake Game** built using the **Raylib** graphics library. The game creates a window, draws a snake on a grid, allows it to move, spawn food, grow, and wrap around the screen.
+A feature-rich implementation of the classic **Snake** game written in **C++** using the **Raylib** library. Includes multiple game modes (Easy / Normal / Hard / Story), persistent save & high-score, dynamic themes, and polished visuals.
 
 ---
 
-## 📌 Full Line-by-Line Explanation
+## Table of Contents
 
-### **1. Header Files**
-```c
-#include <raylib.h>
-#include <stdlib.h>
-#include <math.h>
+* [Demo / Screenshots](#demo--screenshots)
+* [Features](#features)
+* [Controls](#controls)
+* [Prerequisites](#prerequisites)
+* [Folder Structure](#folder-structure)
+* [Build & Run](#build--run)
+* [Game Modes Explained](#game-modes-explained)
+* [Save Files](#save-files)
+* [Project Info & Credits](#project-info--credits)
+* [License](#license)
+
+---
+
+## Demo / Screenshots
+
+*(Add screenshots/gifs of your game here for a nicer GitHub README.)*
+
+---
+
+## Features
+
+* **4 Game Modes**
+
+  * Easy (wrap-around, no walls)
+  * Normal (walls active)
+  * Hard (walls + static obstacles)
+  * Story (progressive difficulty with autosave)
+* **Save & Load** for Story mode (auto-save + continue)
+* **High Score Tracking**
+* **Dynamic Themes** (e.g., Classic / Desert)
+* **Polished visuals** (eye mechanics, transitions, animations)
+
+---
+
+## Controls
+
+| Key        | Action                                |
+| ---------- | ------------------------------------- |
+| Arrow Keys | Move snake (Up / Down / Left / Right) |
+| Enter      | Select menu option                    |
+| ESC        | Pause / Return to menu                |
+| R          | Restart (on Game Over screen)         |
+
+---
+
+## Prerequisites
+
+### Core Tools
+
+* **C++ compiler:** `g++` (MinGW on Windows), `clang`, or MSVC.
+* **Code editor (recommended):** Visual Studio Code, or Visual Studio Community on Windows.
+
+### Required Library
+
+* **Raylib** — games use Raylib for graphics/input/audio.
+
+  * Download Raylib releases from the official repo: `https://github.com/raysan5/raylib/releases`
+  * On Windows the **w64devkit** installer or prebuilt packages are the easiest route.
+
+---
+
+## Folder Structure (recommended)
+
 ```
-- `raylib.h` — for graphics, input, window, drawing.
-- `stdlib.h` — for functions like `rand()` (used inside Raylib's random functions).
-- `math.h` — used earlier but not required now; still included harmlessly.
-
----
-
-## 📌 2. Main Function Begins
-```c
-int main() {
+Project Folder/
+├── main.cpp          # Source code entry point
+├── lib/              # raylib library files (e.g., libraylib.a)
+├── include/          # raylib.h and other headers
+├── assets/           # images, fonts, audio (if any)
+├── savefile.txt      # (auto-created) story progress
+├── highscore.txt     # (auto-created) persistent high score
+└── .vscode/          # optional VS Code tasks / launch configs
 ```
-This starts the program. Everything happens inside `main()`.
 
 ---
 
-## 🖥️ 3. Window and Grid Setup
-```c
-const int screenWidth = 840;
-const int screenHeight = 960;
-const int cellSize = 40;
-const int gridWidth = screenWidth / cellSize;
-const int gridHeight = screenHeight / cellSize;
+## Build & Run
+
+### Command-Line (Windows with g++)
+
+If Raylib is installed and available to the linker:
+
+```bash
+g++ main.cpp -o SnakeGame -lraylib -lgdi32 -lwinmm
 ```
-- Screen resolution is **840×960**.
-- Each grid cell is **40×40 pixels**.
-- `gridWidth` and `gridHeight` represent number of cells horizontally/vertically.
 
----
+> The `-lgdi32 -lwinmm` flags are needed on Windows. Linux/macOS generally require only `-lraylib` (platform-specific audio/window libs may vary).
 
-## 🐍 4. Snake Initialization
-```c
-int snakeLength = 4;
-int snakeX = screenWidth/20;
-int snakeY = screenHeight / 20;
-int snakePosition[255][2] = {{snakeX, snakeY}};
+### Example (Linux/macOS)
+
+```bash
+g++ main.cpp -o SnakeGame -lraylib
 ```
-- Snake starts with a length of **4 segments**.
-- Initial head coordinates calculated based on screen size.
-- `snakePosition` stores (x, y) for **each segment**.
-- First segment = head (`snakeX, snakeY`).
 
----
+### Using Visual Studio Code
 
-## 🎮 5. Movement Key
-```c
-char key = 'R';
-```
-- `'R'` means the snake will move to the **right** initially.
+1. Place `raylib` headers in `include/` and library files in `lib/` (or install raylib system-wide).
+2. Create a `.vscode/tasks.json` entry that compiles with the proper flags:
 
----
-
-## 🎨 6. Color Definitions
-```c
-Color black = {0, 0, 0, 255};
-Color white = {255, 255, 255, 255};
-Color red = {255, 73, 92, 255};
-```
-Custom colors for background, snake, and food.
-
----
-
-## 🍎 7. Food Variables
-```c
-int foodX=0;
-int foodY=0;
-```
-Stores grid coordinates of food.
-
----
-
-## 🪟 8. Initialize Window
-```c
-InitWindow(screenWidth, screenHeight, "first game window by umais using raylib");
-SetTargetFPS(10);
-```
-- Creates the window.
-- Sets game speed to **10 FPS** (snake moves 10 steps per second).
-
----
-
-## 🍏 9. Generate First Food
-```c
-do {
-    foodX = GetRandomValue(0, gridWidth - 1);
-    foodY = GetRandomValue(0, gridHeight - 1);
-} while (foodX == snakeX && foodY == snakeY);
-```
-- Randomly place food **inside the grid**.
-- Loop ensures food does **not spawn on the snake’s head**.
-
----
-
-## 🔄 10. Start Game Loop
-```c
-while (!WindowShouldClose()) {
-```
-Runs continuously until user closes the window.
-
----
-
-## 🎮 11. Detect Keyboard Input
-```c
-if (IsKeyDown(KEY_RIGHT)) key = 'R';
-if (IsKeyDown(KEY_LEFT)) key = 'L';
-if (IsKeyDown(KEY_UP)) key = 'U';
-if (IsKeyDown(KEY_DOWN)) key = 'D';
-```
-Updates movement direction based on arrow keys.
-
----
-
-## 🧩 12. Move Snake Body
-```c
-for(int i=snakeLength; i>0; i--) {
-    snakePosition[i][0] = snakePosition[i-1][0];
-    snakePosition[i][1] = snakePosition[i-1][1];
-}
-```
-- Each segment moves into the position of the one before it.
-- This creates the snake “chain movement”.
-
----
-
-## 🐍 13. Move Snake Head
-```c
-if (key == 'R') snakePosition[0][0] +=1;
-if (key == 'L') snakePosition[0][0] -=1;
-if (key == 'U') snakePosition[0][1] -=1;
-if (key == 'D') snakePosition[0][1] +=1;
-```
-Moves head one cell in chosen direction.
-
----
-
-## 🔁 14. Screen Wrap Logic
-```c
-if (snakePosition[0][0] > gridWidth) snakePosition[0][0] = 0;
-if (snakePosition[0][0] < 0) snakePosition[0][0] = gridWidth;
-if (snakePosition[0][1] > gridHeight) snakePosition[0][1] = 0;
-if (snakePosition[0][1] < 0) snakePosition[0][1] = gridHeight;
-```
-Makes snake appear from the opposite side if it crosses the boundary.
-
----
-
-## 🍎 15. Check Food Collision
-```c
-if (snakePosition[0][0] == foodX && snakePosition[0][1] == foodY) {
-    do {
-        foodX = GetRandomValue(0, gridWidth - 1);
-        foodY = GetRandomValue(0, gridHeight - 1);
-        snakeLength++;
-    } while (snakePosition[0][0] == foodX && snakePosition[0][1] == foodY);
-}
-```
-- If head touches food → snake grows.
-- New food is placed randomly.
-- Ensures food doesn’t spawn on the head.
-
----
-
-## 🎨 16. Start Drawing
-```c
-BeginDrawing();
-ClearBackground(black);
-```
-- Starts a new frame.
-- Fills screen with black.
-
----
-
-## 🧱 17. Draw Grid
-```c
-for(int i=0; i<gridWidth; i++) {
-    for(int j=0; j<gridHeight; j++) {
-        DrawRectangleLines(i*cellSize, j*cellSize, cellSize, cellSize, GRAY);
+```json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build SnakeGame",
+      "type": "shell",
+      "command": "g++",
+      "args": [
+        "main.cpp",
+        "-o",
+        "SnakeGame",
+        "-lraylib",
+        "-lgdi32",
+        "-lwinmm"
+      ],
+      "group": "build"
     }
+  ]
 }
 ```
-Draws grid lines for visual clarity.
+
+3. Run the build task (`Terminal → Run Build Task`) and execute the produced binary.
 
 ---
 
-## 🍏 18. Draw Food
-```c
-DrawRectangle(foodX*cellSize, foodY*cellSize, cellSize, cellSize, red);
+## Game Modes Explained
+
+* **Easy**
+
+  * No walls: the snake wraps around screen edges.
+  * Good for learning controls and mechanics.
+* **Normal**
+
+  * Standard rules: walls are fatal.
+* **Hard**
+
+  * Walls + static obstacles to navigate around.
+* **Story**
+
+  * Progressive difficulty that changes with score:
+
+    * Level 1 (0–50 pts): beginner-friendly.
+    * Level 2 (50–100 pts): walls active.
+    * Level 3 (100+ pts): obstacles spawn.
+  * Story mode **auto-saves** progress so you can continue later.
+
+---
+
+## Save Files
+
+* `savefile.txt` — automatically created (Story mode progress).
+* `highscore.txt` — stores the persisted high score across sessions.
+
+> Ensure your game has write permission in the project directory so these files can be created.
+
+---
+
+## Notes & Tips
+
+* If compilation fails with linker errors, double-check:
+
+  * Raylib library path (e.g., `-L/path/to/lib`) and include path (e.g., `-I/path/to/include`).
+  * On Windows, ensure MinGW/MSYS environments are consistent with the compiler used.
+* For smooth development in VS Code, install the C/C++ extension and configure your includePath and compilerPath in `c_cpp_properties.json`.
+
+---
+
+## Contributing
+
+If you want to improve visuals, add new themes, or expand the Story mode:
+
+1. Fork the repo
+2. Create a feature branch
+3. Open a PR with a clear description of changes
+
+Include a short changelog entry and verify the game still builds on at least one platform.
+
+---
+
+## Project Info & Credits
+
+* **Engine / Library:** Raylib ([https://www.raylib.com](https://www.raylib.com) / [https://github.com/raysan5/raylib](https://github.com/raysan5/raylib))
+* **Language:** C++ (std library: `<string>`, `<fstream>`, `<cmath>`, etc.)
+* **Created by:** *Your Name / Team Name Here* — update this before publishing.
+
+---
+
+## License
+
+Specify a license for your repository. Example:
+
 ```
-Draws food block.
-
----
-
-## 🐍 19. Draw Snake
-```c
-for(int i=0; i<snakeLength; i++) {
-    DrawRectangle(snakePosition[i][0]*cellSize,
-                  snakePosition[i][1]*cellSize,
-                  cellSize, cellSize, white);
-}
+MIT License
 ```
-Each snake segment is drawn as a white square.
+
+(Replace with the license you prefer and add a `LICENSE` file.)
 
 ---
 
-## 🏁 20. Finish Drawing
-```c
-EndDrawing();
-```
-Renders everything on the screen.
+If you want, I can:
 
----
-
-## 🚪 21. End of Game
-```c
-}
-CloseWindow();
-return 0;
-```
-- Exits loop.
-- Closes game window.
-- Program ends.
-
----
-
-# 🎉 Final Notes
-- The snake wraps across edges.
-- Collision with itself is **not implemented yet**.
-- Movement uses a simple grid + array shifting logic.
-
-If you want, I can also create:
-✔ A more advanced README
-✔ A version with images & diagrams
-✔ A version that explains memory, arrays, and loops in depth
-✔ Add self-collision, score, sounds, menus, etc.
-
-Just tell me, Muneeb!
-
+* generate a ready-to-commit `README.md` file with badges and optional screenshots placeholders, or
+* produce a `.vscode/tasks.json` and `c_cpp_properties.json` tailored for your environment (MinGW / Windows or Linux).
